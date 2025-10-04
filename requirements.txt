@@ -1,5 +1,6 @@
 gpiozero
-orangepi_gpio
+# Only install on ARM Linux (OP5) to avoid build failures on x86_64 dev hosts
+orangepi_gpio; platform_system == "Linux" and (platform_machine == "aarch64" or platform_machine == "armv7l" or platform_machine == "armv6l")
 smbus2
 spidev
 Flask>=2.2

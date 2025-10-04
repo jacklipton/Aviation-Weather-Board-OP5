@@ -111,6 +111,7 @@ If you want to change the wiring/device, set `WS2812_SPI_BUS`, `WS2812_SPI_DEVIC
 
 - Development: `docs/DEVELOPMENT.md`
 - Orange Pi 5 deployment: `docs/DEPLOYMENT_OP5.md`
+- CI/CD to Docker Hub: `docs/CI-CD.md`
 - DevContainer specifics: `DEV_INSTR.md`
 
 ## Code layout

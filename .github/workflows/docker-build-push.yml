@@ -29,16 +29,19 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
-        with:vcontainer, commit/push, and get a multi-arch Docker image on Docker Hub ready to pull on the Orange Pi 5.
-
-
+        with:
           images: |
             docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
+            # Branch name tag (e.g., main)
             type=ref,event=branch
+            # Short sha tag
             type=sha
+            # Semver tags when pushing a tag like v1.2.3
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # Latest tag only on main
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
