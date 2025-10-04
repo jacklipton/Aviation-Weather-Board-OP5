@@ -29,7 +29,9 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
-        with:
+        with:vcontainer, commit/push, and get a multi-arch Docker image on Docker Hub ready to pull on the Orange Pi 5.
+
+
           images: |
             docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
