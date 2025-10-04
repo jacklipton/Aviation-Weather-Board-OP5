@@ -107,6 +107,12 @@ The original MicroPython code drove a NeoPixel-like strip. Current implementatio
 
 If you want to change the wiring/device, set `WS2812_SPI_BUS`, `WS2812_SPI_DEVICE`, and `WS2812_SPI_SPEED_HZ` in `.env`.
 
+## Docs
+
+- Development: `docs/DEVELOPMENT.md`
+- Orange Pi 5 deployment: `docs/DEPLOYMENT_OP5.md`
+- DevContainer specifics: `DEV_INSTR.md`
+
 ## Code layout
 
 - `src/` contains all runtime code for the Orange Pi 5 version

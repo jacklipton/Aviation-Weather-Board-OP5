@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+# Optional: system deps (slim image has most basics). For SPI access, the host must expose /dev/spidevX.Y
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy dependencies first for better layer caching
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY src ./src
+COPY run.py ./run.py
+
+# Web server port
+EXPOSE 8080
+
+# Environment defaults (override at runtime)
+ENV HOST=0.0.0.0 PORT=8080
+
+CMD ["python", "-u", "run.py"]
