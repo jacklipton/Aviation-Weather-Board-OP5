@@ -1,0 +1,7 @@
+gpiozero
+orangepi_gpio
+smbus2
+spidev
+Flask>=2.2
+requests>=2.31
+python-dotenv>=1.0

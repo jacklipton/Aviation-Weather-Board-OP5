@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run mock smoke test",
+			"type": "shell",
+			"command": "python3 - << 'PY'\nimport os\nos.environ['ENVIRONMENT']='local'\nos.environ['CHECKWX_API_KEY']='test'\nos.environ['HOST']='127.0.0.1'\nos.environ['PORT']='8099'\n\ntry:\n    import src.web_server as ws\n    print('Imported web_server OK')\n    # Don't actually run Flask server here; just call setup functions and one refresh with mocked HTTP\n    from unittest.mock import patch\n    def fake_get(url, headers=None, timeout=10):\n        class R:\n            def raise_for_status(self):\n                pass\n            def json(self):\n                return {\"data\": [\n                    {\"icao\": \"CYGK\", \"flight_category\": \"VFR\"},\n                    {\"icao\": \"CYHM\", \"flight_category\": \"MVFR\"},\n                    {\"icao\": \"CYKF\", \"flight_category\": \"IFR\"},\n                    {\"icao\": \"CYND\", \"flight_category\": \"LIFR\"},\n                ]}\n        return R()\n    with patch('requests.get', fake_get):\n        summary = ws.service.fetch_and_update()\n        print('Summary:', summary['count'], 'airports updated')\n    print('PASS')\nexcept Exception as e:\n    print('FAIL:', e)\n    raise\nPY",
+			"group": "test"
+		},
+		{
+			"label": "Quick import smoke test (no Flask run)",
+			"type": "shell",
+			"command": "python3 - << 'PY'\nimport os\nos.environ['ENVIRONMENT']='local'\n# Provide dummy API key so startup flash is green path\nos.environ['CHECKWX_API_KEY']='dummy'\ntry:\n    import src.config as cfg\n    import src.light_controller as lc\n    import src.weather_service as ws\n    print('Imports OK:', cfg.ENVIRONMENT, lc.BoardSpec, ws.WeatherService)\n    # Construct controller and service without running Flask\n    c = lc.MockLightController(lc.BoardSpec(led_count=10, brightness=32))\n    c.setup(); c.flash((20,0,0), seconds=0.01, repeats=1); c.clear()\n    print('Controller basic ops OK')\n    print('PASS')\nexcept Exception as e:\n    print('FAIL:', e)\n    raise\nPY",
+			"group": "test"
+		}
+	]
+}
