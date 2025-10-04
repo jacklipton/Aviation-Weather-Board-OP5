@@ -1,1 +1,44 @@
+# Local scripts (if generated)
 parse_metar.py
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+
+# Environments
+.env
+.env.*
+.venv/
+venv/
+
+# Editor/OS junk
+.DS_Store
+.idea/
+.history/
+.cache/
+
+# VS Code: ignore everything except tasks.json if you want to keep shared tasks
+.vscode/*
+!.vscode/tasks.json
+
+# Jupyter checkpoints (none expected, but safe)
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
