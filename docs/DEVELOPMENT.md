@@ -1,67 +1,82 @@
-# Development guide
+# Development Guide
 
-This project is designed to be developed primarily inside a Dev Container and deployed as a Docker image to run on Orange Pi 5.
+This project supports development on both your local machine (Mac/PC) and directly on the Orange Pi 5.
 
-## Options
+## Architecture
+- **Language**: Python 3.11
+- **Web Framework**: Flask
+- **LED Driver**: Custom SPI bit-banging for WS2812 (on Hardware) / Mock Print (on Local)
 
-- Dev Container (recommended)
-- Local venv (optional)
+## 1. Local Development (Mac/PC)
 
-## Dev Container workflow
+Develop the logic and web UI on your computer without needing the hardware.
 
-1) Start the container
+### Setup
+1.  Clone the repo.
+2.  Create `.env` from the example:
+    ```bash
+    cp .env.example .env
+    # Set ENVIRONMENT=local
+    # Set CHECKWX_API_KEY
+    ```
+3.  Install dependencies:
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+### Running
 ```bash
-make docker-run
+python3 run.py
+```
+Open `http://localhost:8080`.
+The console will print "Mock lights" status instead of trying to access SPI hardware.
+
+### Testing
+Unit tests mock the API and Hardware to ensure logic correctness.
+```bash
+python3 -m unittest discover tests
 ```
 
-2) Open in VS Code Dev Containers or attach a shell, then run the app
-```bash
-# Mock mode on your laptop
-make run-mock
+## 2. Hardware Development (Orange Pi 5)
 
-# Hardware mode on the OP5
-make run-hw
-```
+When testing the actual LED strip.
 
-3) Environment configuration
-- Copy `.env.example` to `.env` and edit as needed.
-- Important keys:
-  - `ENVIRONMENT`: local | hardware
-  - `LED_TYPE`: WS2812
-  - `CHECKWX_API_KEY`: your CheckWX key
-  - `AUTH_USERNAME`/`AUTH_PASSWORD`: Basic Auth for the phone UI
-  - `AIRPORTS`, `LED_ORDER`, `LED_COUNT`: mapping and count
-  - `WS2812_SPI_BUS`/`DEVICE`/`SPEED_HZ`: SPI device to use for the data pin
+### Using Docker (Recommended)
+See [DEPLOYMENT_OP5.md](DEPLOYMENT_OP5.md) for the Docker Compose workflow. This is the production-like way to run it.
 
-4) Stop the container
-```bash
-make docker-stop
-```
+### Direct Execution
+If you want to run without Docker for debugging:
+1.  Ensure `SPI` is enabled on the Pi (`orangepi-config`).
+2.  Install system deps:
+    ```bash
+    sudo apt install python3-venv gcc python3-dev
+    ```
+3.  Setup Environment:
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    ```
+4.  Configure `.env`:
+    ```ini
+    ENVIRONMENT=hardware
+    LED_TYPE=WS2812
+    # ... checks API key ...
+    ```
+5.  Run:
+    ```bash
+    sudo -E env PATH=$PATH python3 run.py
+    ```
+    *(Note: `sudo` might be needed for SPI access depending on your udev rules, though usually adding your user to `spi` or `gpio` group is cleaner).*
 
-5) Remove container + image
-```bash
-make docker-rm
-```
+## Project Structure
 
-## Local venv workflow (optional)
-
-```bash
-make venv
-make install
-make run-mock  # or: make run
-```
-
-## Makefile targets
-
-- `venv` / `install` / `run` / `run-mock` / `run-hw` / `clean`
-- Docker (devcontainer): `docker-build`, `docker-run`, `docker-stop`, `docker-rm`
-- Docker (prod): `docker-prod-build IMAGE=...`, `docker-prod-push IMAGE=...`
-- Docker Buildx (multi-arch): `dockerx-create`, `dockerx-build IMAGE=...`, `dockerx-push IMAGE=...`
-
-## Phone UI
-
-Open `http://<host>:8080`. If `AUTH_USERNAME`/`AUTH_PASSWORD` are set, a Basic Auth prompt appears.
-
-- Start: begins periodic weather refresh
-- Stop: turns off LEDs and stops refreshing
-- Refresh Now: fetches and applies latest weather immediately
+- `src/main.py`: Application entry point.
+- `src/web_server.py`: Flask app and background thread management.
+- `src/weather_service.py`: Fetches METARs from CheckWX.
+- `src/light_controller.py`:
+    - `MockLightController`: Prints to console (Local mode).
+    - `WS2812SPIController`: Drives LEDs via SPI (Hardware mode).
+- `Dockerfile.prod`: The production image definition.
