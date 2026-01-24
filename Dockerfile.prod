@@ -3,6 +3,8 @@ FROM python:3.11-slim
 # Optional: system deps (slim image has most basics). For SPI access, the host must expose /dev/spidevX.Y
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    gcc \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
