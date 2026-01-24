@@ -1,7 +1,6 @@
 services:
   app:
-    # REPLACE 'your-dockerhub-username' with your actual username
-    image: ${DOCKER_IMAGE_NAME:-your-dockerhub-username/aviation-weather-board-op5:latest}
+    image: ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}:latest
     container_name: avwx
     restart: unless-stopped
     ports:
