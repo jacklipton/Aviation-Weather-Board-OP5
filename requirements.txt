@@ -1,7 +1,7 @@
 gpiozero
 # Only install on ARM Linux (OP5) to avoid build failures on x86_64 dev hosts
-smbus2
-spidev
+smbus2; sys_platform == 'linux'
+spidev; sys_platform == 'linux'
 Flask>=2.2
 requests>=2.31
 python-dotenv>=1.0

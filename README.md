@@ -110,15 +110,14 @@ Run the code on your Mac/PC with "Mock" LEDs to test logic.
 
 3.  **Run Tests**:
     ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
-    python3 -m unittest discover tests
+    # Create .venv, install deps, and run tests
+    make install
+    make test
     ```
 
 4.  **Run App**:
     ```bash
-    python3 run.py
+    make run-mock
     ```
     Open `http://localhost:8080`.
 

@@ -4,8 +4,8 @@ import requests
 import json
 from typing import List
 
-import config
-from light_controller import BaseLightController, color_for_flight_category
+from . import config
+from .light_controller import BaseLightController, color_for_flight_category
 
 
 class WeatherService:

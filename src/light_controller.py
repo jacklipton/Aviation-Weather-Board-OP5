@@ -5,20 +5,6 @@ import time
 from dataclasses import dataclass
 from typing import List, Tuple
 
-import config
-
-
-Color = Tuple[int, int, int]  # GRB in original MicroPython order; we'll standardize to RGB
-
-
-@dataclass
-from __future__ import annotations
-
-import os
-import time
-from dataclasses import dataclass
-from typing import List, Tuple
-
 from . import config
 
 

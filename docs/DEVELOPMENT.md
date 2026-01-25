@@ -19,16 +19,15 @@ Develop the logic and web UI on your computer without needing the hardware.
     # Set ENVIRONMENT=local
     # Set CHECKWX_API_KEY
     ```
-3.  Install dependencies:
+3.  Setup environment and install dependencies:
     ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
+    # This automatically creates a .venv and installs requirements
+    make install
     ```
 
 ### Running
 ```bash
-python3 run.py
+make run-mock
 ```
 Open `http://localhost:8080`.
 The console will print "Mock lights" status instead of trying to access SPI hardware.
@@ -36,7 +35,7 @@ The console will print "Mock lights" status instead of trying to access SPI hard
 ### Testing
 Unit tests mock the API and Hardware to ensure logic correctness.
 ```bash
-python3 -m unittest discover tests
+make test
 ```
 
 ## 2. Hardware Development (Orange Pi 5)
@@ -55,9 +54,8 @@ If you want to run without Docker for debugging:
     ```
 3.  Setup Environment:
     ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
+    # This automatically creates a .venv and installs requirements
+    make install
     ```
 4.  Configure `.env`:
     ```ini
@@ -67,9 +65,9 @@ If you want to run without Docker for debugging:
     ```
 5.  Run:
     ```bash
-    sudo -E env PATH=$PATH python3 run.py
+    make run-hw
     ```
-    *(Note: `sudo` might be needed for SPI access depending on your udev rules, though usually adding your user to `spi` or `gpio` group is cleaner).*
+    *(Note: Running SPI hardware may require root privileges. You can use `sudo -E make run-hw` if necessary).*
 
 ## Project Structure
 

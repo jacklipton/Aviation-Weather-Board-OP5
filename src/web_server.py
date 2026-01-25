@@ -13,6 +13,7 @@ app = Flask(__name__)
 
 controller = make_controller()
 controller.setup()
+service = WeatherService(controller)
 _active = True
 _lock = threading.Lock()
 

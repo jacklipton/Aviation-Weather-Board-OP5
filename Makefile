@@ -8,8 +8,8 @@ ACT := . $(VENV)/bin/activate;
 PY := python3
 PIP := pip3
 
-.PHONY: help venv install run run-mock run-hw clean \
-	docker-build docker-run docker-stop docker-rm docker-push docker-prod-build docker-prod-push \
+.PHONY: help venv install run run-mock run-hw test clean \
+	docker-push docker-prod-build docker-prod-push \
 	dockerx-create dockerx-build dockerx-push
 
 help:
@@ -19,14 +19,10 @@ help:
 	@echo "  run         - run the app (uses .env if present)"
 	@echo "  run-mock    - run in mock mode (ENVIRONMENT=local)"
 	@echo "  run-hw      - run for Orange Pi (ENVIRONMENT=hardware, LED_TYPE=WS2812)"
+	@echo "  test        - run unit tests"
 	@echo "  clean       - remove caches and build artifacts"
 	@echo ""
-	@echo "Docker (devcontainer compose):"
-	@echo "  docker-build   - build the devcontainer image"
-	@echo "  docker-run     - up the devcontainer (port 8080 exposed)"
-	@echo "  docker-stop    - stop the devcontainer"
-	@echo "  docker-rm      - remove the devcontainer and its image"
-	@echo ""
+
 	@echo "Docker (production image for OP5):"
 	@echo "  docker-prod-build  - build production image (requires IMAGE=<name>)"
 	@echo "  docker-prod-push   - push production image (requires IMAGE=<name>)"
@@ -52,24 +48,13 @@ run-mock: install
 run-hw: install
 	ENVIRONMENT=hardware LED_TYPE=WS2812 $(ACT) $(PY) run.py
 
+test: install
+	$(ACT) $(PY) -m unittest discover tests
+
 clean:
 	rm -rf __pycache__ */__pycache__ .pytest_cache .mypy_cache build dist *.egg-info
 
-# -------- Docker Devcontainer helpers --------
-DEV_SVC := dev
-DEV_DIR := .devcontainer
 
-docker-build:
-	docker compose -f $(DEV_DIR)/docker-compose.yml build $(DEV_SVC)
-
-docker-run:
-	docker compose -f $(DEV_DIR)/docker-compose.yml up -d $(DEV_SVC)
-
-docker-stop:
-	docker compose -f $(DEV_DIR)/docker-compose.yml down
-
-docker-rm:
-	docker compose -f $(DEV_DIR)/docker-compose.yml down --rmi all --volumes --remove-orphans
 
 # -------- Production image (for OP5) --------
 # Usage:
