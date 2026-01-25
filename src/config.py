@@ -75,3 +75,8 @@ for i, icao in enumerate(AIRPORT_LIST):
     if i < len(LED_ORDER):
         AIRPORT_LED_MAP[icao] = LED_ORDER[i]
 
+print(f"📍 Configuration Loaded:")
+print(f"   Airports: {AIRPORT_LIST}")
+print(f"   LED Order: {LED_ORDER}")
+print(f"   Final Map: {AIRPORT_LED_MAP}")
+
