@@ -156,10 +156,10 @@ def make_controller() -> BaseLightController:
 
 # Utilities for mapping flight categories to colors
 FLIGHT_COLORS = {
-    "VFR": (20, 0, 0),   # Green
-    "MVFR": (0, 0, 35),  # Blue
-    "IFR": (0, 25, 0),   # Red
-    "LIFR": (0, 25, 25), # Pink
+    "VFR": (255, 0, 0),   # Green (GRB)
+    "MVFR": (0, 0, 255),  # Blue
+    "IFR": (0, 255, 0),   # Red
+    "LIFR": (0, 255, 255), # Pink
 }
 
 def color_for_flight_category(cat: str) -> Color:
