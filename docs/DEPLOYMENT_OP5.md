@@ -5,8 +5,19 @@ This guide covers running the application on the Orange Pi 5 using Docker Compos
 ## Prerequisites
 
 1.  **Docker & Docker Compose** installed on the OP5.
-2.  **SPI Enabled**: Ensure `/dev/spidev0.0` exists.
-    -   If not, use `orangepi-config` (System -> Hardware) to enable SPI.
+2.  **SPI Enabled**: Ensure `/dev/spidev4.0` exists.
+    -   This corresponds to **SPI4** on the Orange Pi 5 26-pin header.
+    -   If not, use `orangepi-config` (System -> Hardware) to enable SPI4.
+
+## Hardware Hookup (Orange Pi 5 26-pin Header)
+
+Connect your WS2812 LED strip as follows:
+
+*   **Data (DIN):** **Pin 19** (SPI4_MOSI) - *10th pin down on the inner (left) row*.
+*   **Power (5V):** **Pin 2** - *Top-right pin*.
+*   **Ground (GND):** **Pin 4** - *Below Pin 2*.
+
+*Note: Ensure your `WS2812_SPI_BUS` is set to `4` in your `.env` file.*
 
 ## 1. Setup GitHub Secrets
 
@@ -30,6 +41,7 @@ Important settings for hardware:
 ```ini
 ENVIRONMENT=hardware
 LED_TYPE=WS2812
+WS2812_SPI_BUS=4
 CHECKWX_API_KEY=your_real_api_key
 # ... other settings ...
 ```
@@ -49,7 +61,7 @@ services:
     env_file:
       - .env
     devices:
-      - "/dev/spidev0.0:/dev/spidev0.0"
+      - "/dev/spidev4.0:/dev/spidev4.0"
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 

@@ -59,7 +59,7 @@ This project visualizes live weather data on a VNC (VFR Navigation Chart) map. E
 ### Prerequisites
 
 * **Orange Pi 5** with Docker and Docker Compose installed.
-* **WS2812 LED Strip** wired to the SPI0 MOSI pin (with 5V power).
+* **WS2812 LED Strip** wired to the SPI4 MOSI pin (Pin 19) (with 5V power).
 * **CheckWX API Key**: Get one for free at [CheckWX](https://www.checkwxapi.com/).
 
 ### Installation (Production)
