@@ -46,10 +46,6 @@ def _worker():
         time.sleep(max(1, config.REFRESH_SECONDS))
 
 
-thread = threading.Thread(target=_worker, daemon=True)
-thread.start()
-
-
 @app.route("/")
 def index() -> Response:
     guard = _require_auth()
@@ -127,4 +123,9 @@ def run():
         controller.flash((20, 0, 0), seconds=0.2, repeats=2)  # Green
     else:
         controller.flash((0, 25, 0), seconds=0.2, repeats=2)  # Red
+
+    # Start background worker
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+
     app.run(host=config.HOST or "0.0.0.0", port=int(config.PORT or 8080))

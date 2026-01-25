@@ -33,7 +33,7 @@ help:
 	@echo "  dockerx-push       - build+push multi-arch image (requires IMAGE=<name>)"
 
 venv:
-	$(PY) -m venv $(VENV)
+	test -d $(VENV) || $(PY) -m venv $(VENV)
 
 install: venv
 	$(ACT) $(PIP) install --upgrade pip
