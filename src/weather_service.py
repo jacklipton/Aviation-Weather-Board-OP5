@@ -34,19 +34,24 @@ class WeatherService:
         self.controller.clear()
 
         used = []
-        for i, st in enumerate(stations):
-            if i >= len(config.LED_ORDER):
-                break
-            cat = st.get("flight_category", "") or ""
-            color = color_for_flight_category(cat)
-            led_index = config.LED_ORDER[i]
-            self.controller.set_pixel(led_index, color)
-            used.append({
-                "icao": st.get("icao", st.get("station", {}).get("name", f"#{i}")),
-                "flight_category": cat,
-                "led": led_index,
-                "color": color,
-            })
+        for st in stations:
+            icao = st.get("icao", "").upper()
+            if not icao:
+                continue
+            
+            # Find the LED index assigned to this specific ICAO
+            led_index = config.AIRPORT_LED_MAP.get(icao)
+            
+            if led_index is not None:
+                cat = st.get("flight_category", "") or ""
+                color = color_for_flight_category(cat)
+                self.controller.set_pixel(led_index, color)
+                used.append({
+                    "icao": icao,
+                    "flight_category": cat,
+                    "led": led_index,
+                    "color": color,
+                })
 
         self.controller.show()
         return {"count": len(used), "airports": used}

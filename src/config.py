@@ -26,11 +26,13 @@ PORT = int(getenv("PORT", "8080"))
 # Weather / API
 CHECKWX_API_KEY = getenv("CHECKWX_API_KEY", "")
 
-# Airports as CSV string
-AIRPORTS = getenv(
+# Airports as list
+_airports_raw = getenv(
     "AIRPORTS",
     "CYGK,CYHM,CYKF,CYND,CYOO,CYOW,CYPQ,CYQA,CYSN,CYTR,CYTZ,CYXU,CYYZ,KBUF,KIAG,KMSS,KOGS",
 )
+AIRPORT_LIST = [a.strip().upper() for a in _airports_raw.split(",") if a.strip()]
+AIRPORTS = ",".join(AIRPORT_LIST)
 
 # Refresh interval in seconds (default 15 minutes)
 REFRESH_SECONDS = int(getenv("REFRESH_SECONDS", "900"))
@@ -54,11 +56,17 @@ AUTH_PASSWORD = getenv("AUTH_PASSWORD", "")
 DEFAULT_LED_ORDER = [14, 41, 44, 8, 21, 7, 19, 26, 35, 17, 31, 48, 32, 38, 36, 4, 1]
 
 # Optional: override via comma-separated ints
-LED_ORDER = [
-    int(x)
-    for x in getenv(
-        "LED_ORDER",
-        ",".join(str(i) for i in DEFAULT_LED_ORDER),
-    ).split(",")
-]
+_led_order_raw = getenv(
+    "LED_ORDER",
+    ",".join(str(i) for i in DEFAULT_LED_ORDER),
+)
+LED_ORDER = [int(x.strip()) for x in _led_order_raw.split(",") if x.strip()]
+
+# Create a mapping of ICAO -> LED Index
+# This ensures that even if the API returns data in a different order, 
+# the correct LED lights up for the correct airport.
+AIRPORT_LED_MAP = {}
+for i, icao in enumerate(AIRPORT_LIST):
+    if i < len(LED_ORDER):
+        AIRPORT_LED_MAP[icao] = LED_ORDER[i]
 
