@@ -121,12 +121,13 @@ class WS2812SPIController(BaseLightController):
             self._grb[index] = (g, r, b)
 
     def show(self) -> None:
-        payload: List[int] = []
+        # Pre-Reset: Sending a few zeros ensures the line is low before data starts
+        payload: List[int] = [0x00] * 12
         for (g, r, b) in self._grb:
             payload += self._encode_byte(g)
             payload += self._encode_byte(r)
             payload += self._encode_byte(b)
-        # Latch: low for >50us, achieved with SPI idle; sending zeros helps
+        # Latch / Post-Reset: low for >50us, achieved with SPI idle; sending zeros helps
         payload += [0x00] * 64
         try:
             self.spi.xfer2(payload)

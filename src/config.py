@@ -10,10 +10,15 @@ load_dotenv(REPO_ROOT / ".env")
 
 
 def getenv(name: str, default: Optional[str] = None) -> Optional[str]:
-    """Wrapper that trims whitespace and returns default when missing."""
+    """Wrapper that trims whitespace and returns default when missing.
+    Also strips inline comments starting with #.
+    """
     val = os.getenv(name)
     if val is None:
         return default
+    # Strip inline comments
+    if "#" in val:
+        val = val.split("#")[0]
     return val.strip()
 
 
