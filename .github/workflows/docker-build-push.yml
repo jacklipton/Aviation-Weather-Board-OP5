@@ -8,7 +8,8 @@ on:
 
 jobs:
   test:
-    runs-on: [self-hosted, linux, x64]
+    # Changed from [self-hosted, linux, x64]
+    runs-on: ubuntu-latest 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +30,8 @@ jobs:
 
   docker:
     needs: test
-    runs-on: [self-hosted, linux, x64]
+    # Changed from [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -55,14 +57,10 @@ jobs:
           images: |
             docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
-            # Branch name tag (e.g., main)
             type=ref,event=branch
-            # Short sha tag
             type=sha
-            # Semver tags when pushing a tag like v1.2.3
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            # Latest tag only on main
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push
@@ -70,6 +68,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.prod
+          # GitHub runners use QEMU to build arm64 on x64 hardware
           platforms: linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
