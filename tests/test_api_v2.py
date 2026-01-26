@@ -24,6 +24,7 @@ class TestFastAPI(unittest.TestCase):
         self.assertIn("uptime_seconds", data)
 
     @patch("src.weather_service.requests.get")
+    @patch("src.config.CHECKWX_API_KEY", "test_key")
     def test_weather_endpoint(self, mock_get):
         # Mock CheckWX response
         mock_response = MagicMock()
