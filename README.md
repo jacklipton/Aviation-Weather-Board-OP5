@@ -41,17 +41,17 @@ This project visualizes live weather data on a VNC (VFR Navigation Chart) map. E
 * **Pink** = LIFR (Low Instrument Flight Rules)
 
 **New in this version:**
+* **Modern Web UI**: A beautiful, responsive React dashboard to control the board and view detailed weather info (Wind, Visibility, Clouds) for every airport.
 * **Orange Pi 5 Support**: Optimized for the OP5 hardware using SPI for reliable LED timing.
 * **Dockerized**: Runs in a container for easy deployment and isolation.
 * **Auto-Updating**: Uses Watchtower to automatically pull and restart the app when you push code to GitHub.
-* **Web UI**: Control the board (Start/Stop/Refresh) from your phone.
 
 ## Architecture
 
 * **Hardware**: Orange Pi 5 (running Linux)
-* **Language**: Python 3.11
-* **LED Driver**: WS2812 (NeoPixel) driven via SPI (MOSI) for high-precision timing.
-* **Web Server**: Flask
+* **Frontend**: React + Tailwind CSS (Single Page App)
+* **Backend**: Python FastAPI (Async)
+* **LED Driver**: WS2812 (NeoPixel) driven via SPI (MOSI)
 * **Deployment**: Docker Compose + Watchtower
 
 ## Getting Started
@@ -88,7 +88,7 @@ This setup runs on the Orange Pi 5 and stays up-to-date automatically.
     docker compose up -d
     ```
 
-The board will light up. Visit `http://<pi-ip>:8080` to control it.
+The board will light up. Visit `http://<pi-ip>:8080` to see the new dashboard.
 *See `docs/DEPLOYMENT_OP5.md` for full deployment details.*
 
 ### Installation (Development)
@@ -110,7 +110,7 @@ Run the code on your Mac/PC with "Mock" LEDs to test logic.
 
 3.  **Run Tests**:
     ```bash
-    # Create .venv, install deps, and run tests
+    # Create .venv, install deps (backend & frontend), and run tests
     make install
     make test
     ```
@@ -119,7 +119,7 @@ Run the code on your Mac/PC with "Mock" LEDs to test logic.
     ```bash
     make run-mock
     ```
-    Open `http://localhost:8080`.
+    This will build the frontend and start the backend. Open `http://localhost:8080`.
 
 ## Configuration
 

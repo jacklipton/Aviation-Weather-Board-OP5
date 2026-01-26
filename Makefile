@@ -38,14 +38,20 @@ venv:
 install: venv
 	$(ACT) $(PIP) install --upgrade pip
 	$(ACT) $(PIP) install -r requirements.txt
+	@echo "Installing frontend dependencies..."
+	cd frontend && npm install
 
-run: install
+frontend-build:
+	@echo "Building frontend..."
+	cd frontend && npm run build
+
+run: install frontend-build
 	$(ACT) $(PY) run.py
 
-run-mock: install
+run-mock: install frontend-build
 	ENVIRONMENT=local $(ACT) $(PY) run.py
 
-run-hw: install
+run-hw: install frontend-build
 	ENVIRONMENT=hardware LED_TYPE=WS2812 $(ACT) $(PY) run.py
 
 test: install
