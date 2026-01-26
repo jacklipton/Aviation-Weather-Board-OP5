@@ -3,13 +3,17 @@
 This project supports development on both your local machine (Mac/PC) and directly on the Orange Pi 5.
 
 ## Architecture
-- **Language**: Python 3.11
-- **Web Framework**: Flask
+- **Backend**: Python 3.11 with **FastAPI** (Async)
+- **Frontend**: **React 18** with **Tailwind CSS** (Vite-based)
 - **LED Driver**: Custom SPI bit-banging for WS2812 (on Hardware) / Mock Print (on Local)
 
 ## 1. Local Development (Mac/PC)
 
 Develop the logic and web UI on your computer without needing the hardware.
+
+### Prerequisites
+- Python 3.11+
+- Node.js 18+ (for frontend)
 
 ### Setup
 1.  Clone the repo.
@@ -21,7 +25,7 @@ Develop the logic and web UI on your computer without needing the hardware.
     ```
 3.  Setup environment and install dependencies:
     ```bash
-    # This automatically creates a .venv and installs requirements
+    # This creates a .venv, installs Python requirements, and runs npm install
     make install
     ```
 
@@ -29,52 +33,40 @@ Develop the logic and web UI on your computer without needing the hardware.
 ```bash
 make run-mock
 ```
-Open `http://localhost:8080`.
-The console will print "Mock lights" status instead of trying to access SPI hardware.
+This target will:
+1. Build the frontend (`npm run build`).
+2. Start the FastAPI server on `http://localhost:8080`.
+
+**Note for UI Development**: 
+If you are only editing the React frontend, you can run the Vite dev server for instant reloads:
+```bash
+cd frontend
+npm run dev
+```
+(Vite is configured to proxy `/api` requests to the Python server at `:8080`).
 
 ### Testing
-Unit tests mock the API and Hardware to ensure logic correctness.
 ```bash
 make test
 ```
 
 ## 2. Hardware Development (Orange Pi 5)
 
-When testing the actual LED strip.
-
 ### Using Docker (Recommended)
-See [DEPLOYMENT_OP5.md](DEPLOYMENT_OP5.md) for the Docker Compose workflow. This is the production-like way to run it.
+See [DEPLOYMENT_OP5.md](DEPLOYMENT_OP5.md) for the Docker Compose workflow.
 
 ### Direct Execution
-If you want to run without Docker for debugging:
-1.  Ensure `SPI` is enabled on the Pi (`orangepi-config`).
-2.  Install system deps:
-    ```bash
-    sudo apt install python3-venv gcc python3-dev
-    ```
-3.  Setup Environment:
-    ```bash
-    # This automatically creates a .venv and installs requirements
-    make install
-    ```
-4.  Configure `.env`:
-    ```ini
-    ENVIRONMENT=hardware
-    LED_TYPE=WS2812
-    # ... checks API key ...
-    ```
-5.  Run:
-    ```bash
-    make run-hw
-    ```
-    *(Note: Running SPI hardware may require root privileges. You can use `sudo -E make run-hw` if necessary).*
+1.  Ensure `SPI` is enabled (`orangepi-config`).
+2.  Install system deps: `sudo apt install python3-venv gcc python3-dev nodejs npm`
+3.  `make install`
+4.  Run: `make run-hw`
 
 ## Project Structure
 
-- `src/main.py`: Application entry point.
-- `src/web_server.py`: Flask app and background thread management.
-- `src/weather_service.py`: Fetches METARs from CheckWX.
-- `src/light_controller.py`:
-    - `MockLightController`: Prints to console (Local mode).
-    - `WS2812SPIController`: Drives LEDs via SPI (Hardware mode).
-- `Dockerfile.prod`: The production image definition.
+- `src/main.py`: Entry point (Uvicorn launcher).
+- `src/web_app.py`: FastAPI application and background async worker.
+- `src/weather_service.py`: Fetches and caches rich METAR data.
+- `src/light_controller.py`: Hardware abstraction for LEDs.
+- `frontend/`: React source code.
+- `frontend/dist/`: Built static assets (served by FastAPI).
+- `Dockerfile.prod`: Multi-stage build (Node -> Python).
