@@ -5,4 +5,5 @@ spidev; sys_platform == 'linux'
 fastapi>=0.100.0
 uvicorn[standard]>=0.20.0
 httpx>=0.24.0
+requests>=2.31
 python-dotenv>=1.0
