@@ -35,6 +35,10 @@ class BaseLightController:
             self.set_pixel(i, (0, 0, 0))
         self.show()
 
+    def set_brightness(self, brightness: int) -> None:
+        """Update global brightness (0-255)."""
+        self.spec.brightness = max(0, min(255, brightness))
+
     def flash(self, color: Color, seconds: float = 0.5, repeats: int = 3) -> None:
         for _ in range(repeats):
             for i in range(self.spec.led_count):
@@ -62,6 +66,10 @@ class MockLightController(BaseLightController):
         lit = sum(1 for c in self._state if c != (0, 0, 0))
         preview = ", ".join(str(self._state[i]) for i in range(min(8, self.spec.led_count)))
         print(f"✳️  Show: {lit} lit | [{preview}{'...' if self.spec.led_count>8 else ''}]")
+
+    def set_brightness(self, brightness: int) -> None:
+        super().set_brightness(brightness)
+        print(f"🔆 Brightness set to {self.spec.brightness}")
 
 
 class WS2812SPIController(BaseLightController):

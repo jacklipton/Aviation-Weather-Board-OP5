@@ -37,4 +37,5 @@ export interface SystemStatus {
   active: boolean;
   last_update?: string;
   uptime_seconds: number;
+  brightness: number;
 }

@@ -38,10 +38,14 @@ class SystemStatus(BaseModel):
     active: bool
     last_update: Optional[str] = None
     uptime_seconds: float = 0.0
+    brightness: int = 255
 
 class ControlResponse(BaseModel):
     ok: bool
     message: str
+
+class BrightnessPayload(BaseModel):
+    brightness: int
 
 # --- Worker ---
 
@@ -137,7 +141,8 @@ async def get_status():
     return SystemStatus(
         active=worker.active,
         last_update=None, # Todo: Track timestamp in service
-        uptime_seconds=0.0 # Todo: Track start time
+        uptime_seconds=0.0, # Todo: Track start time
+        brightness=controller.spec.brightness
     )
 
 @app.get("/api/weather", response_model=List[WeatherData])
@@ -163,6 +168,12 @@ async def stop_board():
 async def refresh_board():
     worker.trigger_refresh()
     return ControlResponse(ok=True, message="Refresh triggered")
+
+@app.post("/api/control/brightness", response_model=ControlResponse)
+async def set_brightness(payload: BrightnessPayload):
+    controller.set_brightness(payload.brightness)
+    worker.trigger_refresh() # Re-render with new brightness
+    return ControlResponse(ok=True, message=f"Brightness set to {payload.brightness}")
 
 # --- Static Files ---
 # Serve frontend if it exists, otherwise meaningful 404
