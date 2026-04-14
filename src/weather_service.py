@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import requests
 import json
 import threading
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger("WeatherBoard")
 
 from . import config
 from .light_controller import BaseLightController, color_for_flight_category
@@ -39,20 +42,20 @@ class WeatherService:
         data = r.json()
         stations = data.get("data", [])
 
-        # Ensure controller is ready
-        self.controller.clear()
+        # Build a lookup of last known data so we can fall back to it for any
+        # airport the API omits in a partial response.
+        with self._lock:
+            last_by_icao = {d["icao"]: d for d in self.last_weather_data}
 
-        used = []
+        # Parse fresh data from the API response.
+        fresh_by_icao: dict = {}
         for st in stations:
             icao = st.get("icao", "").upper()
             if not icao:
                 continue
-            
-            # Find the LED index assigned to this specific ICAO
+
             led_index = config.AIRPORT_LED_MAP.get(icao)
-            
             cat = st.get("flight_category", "Unknown")
-            # Extract rich data
             rich_data = {
                 "icao": icao,
                 "flight_category": cat,
@@ -67,16 +70,32 @@ class WeatherService:
                 "raw_text": st.get("raw_text", ""),
                 "station_name": st.get("station", {}).get("name", "")
             }
-            
             if led_index is not None:
                 color = color_for_flight_category(cat)
-                self.controller.set_pixel(led_index, color)
                 rich_data["led_color"] = color
+            fresh_by_icao[icao] = rich_data
 
-            used.append(rich_data)
+        # For any configured airport missing from this response, keep its last
+        # known data so a partial API response doesn't blank out LEDs.
+        missing = [icao for icao in config.AIRPORT_LIST if icao not in fresh_by_icao]
+        if missing:
+            logger.warning("API response missing %d airport(s): %s — using last known state", len(missing), missing)
+        for icao in missing:
+            if icao in last_by_icao:
+                fresh_by_icao[icao] = last_by_icao[icao]
 
+        # Rebuild display in configured airport order so LED indices are consistent.
+        used = [fresh_by_icao[icao] for icao in config.AIRPORT_LIST if icao in fresh_by_icao]
+
+        # Update LEDs. Clear first, then paint every airport we have data for.
+        self.controller.clear()
+        for entry in used:
+            led_index = entry.get("led_index")
+            color = entry.get("led_color")
+            if led_index is not None and color is not None:
+                self.controller.set_pixel(led_index, color)
         self.controller.show()
-        
+
         with self._lock:
             self.last_weather_data = used
 
