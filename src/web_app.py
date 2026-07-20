@@ -152,6 +152,7 @@ async def get_weather():
 
 @app.post("/api/control/start", response_model=ControlResponse)
 async def start_board():
+    controller.set_enabled(True) # Allow the strip to be painted again
     worker.active = True
     worker.trigger_refresh() # Instant update
     return ControlResponse(ok=True, message="Board started")
@@ -159,9 +160,13 @@ async def start_board():
 @app.post("/api/control/stop", response_model=ControlResponse)
 async def stop_board():
     worker.active = False
-    controller.clear()
-    # We don't stop the loop, just the updates, but user might expect 'stop' to mean no updates
-    # The worker loop checks 'self.active'.
+    # Disable output first so any in-flight weather update can't relight the
+    # strip after we clear it, then force every LED off. Run the clear in the
+    # worker thread pool so hardware access stays off the event loop and shares
+    # the controller lock with the update path.
+    controller.set_enabled(False)
+    await asyncio.to_thread(controller.clear)
+    # We don't stop the loop, just the updates. The worker loop checks 'self.active'.
     return ControlResponse(ok=True, message="Board stopped")
 
 @app.post("/api/control/refresh", response_model=ControlResponse)

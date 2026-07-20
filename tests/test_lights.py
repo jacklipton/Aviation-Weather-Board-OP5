@@ -23,6 +23,32 @@ class TestMockController(unittest.TestCase):
         self.ctrl.clear()
         self.assertEqual(self.ctrl._state[0], (0, 0, 0))
 
+    def test_stop_is_authoritative_over_repaint(self):
+        # Reproduces the "LED stays lit after Stop" bug: an update that lands
+        # after the board is stopped must NOT relight the strip.
+        self.ctrl.set_pixel(1, (0, 255, 0))
+        self.ctrl.show()
+        self.assertEqual(self.ctrl._displayed[1], (0, 255, 0))
+
+        # Stop, as the /api/control/stop handler does it.
+        self.ctrl.set_enabled(False)
+        self.ctrl.clear()
+        self.assertTrue(all(c == (0, 0, 0) for c in self.ctrl._displayed),
+                        "clear() must turn every LED off")
+
+        # A late / in-flight weather repaint arrives after Stop.
+        self.ctrl.set_pixel(1, (0, 255, 0))
+        self.ctrl.show()
+        self.assertEqual(self.ctrl._displayed[1], (0, 0, 0),
+                         "A stopped board must not relight LEDs")
+
+    def test_start_re_enables_output(self):
+        self.ctrl.set_enabled(False)
+        self.ctrl.set_enabled(True)
+        self.ctrl.set_pixel(2, (1, 2, 3))
+        self.ctrl.show()
+        self.assertEqual(self.ctrl._displayed[2], (1, 2, 3))
+
 class TestWS2812Encoding(unittest.TestCase):
     def test_encode_byte(self):
         # 1 -> 110 (binary 6), 0 -> 100 (binary 4)

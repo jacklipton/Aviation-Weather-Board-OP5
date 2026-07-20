@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
 from dataclasses import dataclass
 from typing import List, Tuple
@@ -20,6 +21,13 @@ class BoardSpec:
 class BaseLightController:
     def __init__(self, spec: BoardSpec):
         self.spec = spec
+        # When disabled, show() is a no-op so a late / in-flight weather update
+        # can't relight the strip after the board has been stopped. clear()
+        # ignores this and always turns the LEDs off. _lock serialises every
+        # transmit so the event-loop thread (stop/clear) and the worker thread
+        # (weather repaints) can't interleave writes to the shared SPI device.
+        self.enabled = True
+        self._lock = threading.Lock()
 
     def setup(self) -> None:
         raise NotImplementedError
@@ -27,13 +35,26 @@ class BaseLightController:
     def set_pixel(self, index: int, color: Color) -> None:
         raise NotImplementedError
 
-    def show(self) -> None:
+    def _render(self) -> None:
+        """Push the current pixel buffer to the hardware. Subclasses implement."""
         raise NotImplementedError
 
+    def show(self) -> None:
+        with self._lock:
+            if not self.enabled:
+                return
+            self._render()
+
     def clear(self) -> None:
-        for i in range(self.spec.led_count):
-            self.set_pixel(i, (0, 0, 0))
-        self.show()
+        # Turning the board off must always win, even while disabled.
+        with self._lock:
+            for i in range(self.spec.led_count):
+                self.set_pixel(i, (0, 0, 0))
+            self._render()
+
+    def set_enabled(self, flag: bool) -> None:
+        with self._lock:
+            self.enabled = bool(flag)
 
     def set_brightness(self, brightness: int) -> None:
         """Update global brightness (0-255)."""
@@ -53,6 +74,9 @@ class MockLightController(BaseLightController):
     def __init__(self, spec: BoardSpec):
         super().__init__(spec)
         self._state: List[Color] = [(0, 0, 0)] * spec.led_count
+        # Mirrors what has actually been pushed to the "strip"; only _render()
+        # updates it, so it reflects real displayed state rather than the buffer.
+        self._displayed: List[Color] = [(0, 0, 0)] * spec.led_count
 
     def setup(self) -> None:
         print("🧪 Mock lights ready:", self.spec)
@@ -61,10 +85,11 @@ class MockLightController(BaseLightController):
         if 0 <= index < self.spec.led_count:
             self._state[index] = color
 
-    def show(self) -> None:
+    def _render(self) -> None:
         # Compact visualization: count non-black and show first few entries
-        lit = sum(1 for c in self._state if c != (0, 0, 0))
-        preview = ", ".join(str(self._state[i]) for i in range(min(8, self.spec.led_count)))
+        self._displayed = list(self._state)
+        lit = sum(1 for c in self._displayed if c != (0, 0, 0))
+        preview = ", ".join(str(self._displayed[i]) for i in range(min(8, self.spec.led_count)))
         print(f"✳️  Show: {lit} lit | [{preview}{'...' if self.spec.led_count>8 else ''}]")
 
     def set_brightness(self, brightness: int) -> None:
@@ -128,7 +153,7 @@ class WS2812SPIController(BaseLightController):
             b = int(b * scale) & 0xFF
             self._grb[index] = (g, r, b)
 
-    def show(self) -> None:
+    def _render(self) -> None:
         payload: List[int] = []
         for (g, r, b) in self._grb:
             payload += self._encode_byte(g)
