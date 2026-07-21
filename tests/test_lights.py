@@ -79,5 +79,43 @@ class TestWS2812Encoding(unittest.TestCase):
         encoded = WS2812SPIController._encode_byte(0x00)
         self.assertEqual(encoded, [0x92, 0x49, 0x24])
 
+class TestWS2812Framing(unittest.TestCase):
+    # Fastest clock the app supports; the reset must be long enough there too.
+    MAX_SPI_HZ = 3_200_000
+
+    @staticmethod
+    def _leading_zero_bytes(payload):
+        count = 0
+        for byte in payload:
+            if byte != 0x00:
+                break
+            count += 1
+        return count
+
+    def test_frame_begins_with_reset_pulse(self):
+        # Reproduces the "first LED keeps its old colour" bug. Without a reset
+        # before the data, pixel 0's first bits land on the SPI controller's
+        # startup edge and get mis-read, so LED 0 latches garbage while every
+        # downstream pixel is fine.
+        payload = WS2812SPIController._build_payload([(0, 255, 0)])
+        lead_us = self._leading_zero_bytes(payload) * 8 / self.MAX_SPI_HZ * 1e6
+        self.assertGreaterEqual(
+            lead_us, 50.0,
+            "WS2812 needs >=50us low before data or pixel 0 mis-reads the frame")
+
+    def test_frame_ends_with_latch(self):
+        payload = WS2812SPIController._build_payload([(0, 255, 0)])
+        trail_us = self._leading_zero_bytes(payload[::-1]) * 8 / self.MAX_SPI_HZ * 1e6
+        self.assertGreaterEqual(trail_us, 50.0, "frame must latch after the data")
+
+    def test_pixel_data_follows_the_reset(self):
+        payload = WS2812SPIController._build_payload([(0x00, 0xFF, 0x00)])
+        start = self._leading_zero_bytes(payload)
+        expected = (WS2812SPIController._encode_byte(0x00)
+                    + WS2812SPIController._encode_byte(0xFF)
+                    + WS2812SPIController._encode_byte(0x00))
+        self.assertEqual(payload[start:start + len(expected)], expected,
+                         "GRB data must be transmitted intact after the reset")
+
 if __name__ == '__main__':
     unittest.main()

@@ -153,16 +153,28 @@ class WS2812SPIController(BaseLightController):
             b = int(b * scale) & 0xFF
             self._grb[index] = (g, r, b)
 
-    def _render(self) -> None:
-        payload: List[int] = []
-        for (g, r, b) in self._grb:
-            payload += self._encode_byte(g)
-            payload += self._encode_byte(r)
-            payload += self._encode_byte(b)
+    # Zero bytes framing the pixel data. 64 bytes is >=160us of line-low even at
+    # the fastest clock we run (3.2MHz), comfortably past the >50us WS2812 reset.
+    RESET_BYTES = 64
+
+    @classmethod
+    def _build_payload(cls, grb: List[Color]) -> List[int]:
+        # The leading reset is not optional. Without it pixel 0's first bits sit
+        # on the SPI controller's startup edge and get mis-read, so LED 0 latches
+        # a stale/garbage colour while every downstream pixel decodes fine — the
+        # trailing latch alone does not protect the start of the next frame.
+        payload: List[int] = [0x00] * cls.RESET_BYTES
+        for (g, r, b) in grb:
+            payload += cls._encode_byte(g)
+            payload += cls._encode_byte(r)
+            payload += cls._encode_byte(b)
         # Latch / Post-Reset: low for >50us, achieved with SPI idle; sending zeros helps
-        payload += [0x00] * 64
+        payload += [0x00] * cls.RESET_BYTES
+        return payload
+
+    def _render(self) -> None:
         try:
-            self.spi.xfer2(payload)
+            self.spi.xfer2(self._build_payload(self._grb))
         except Exception as e:
             print("SPI write failed:", e)
 
