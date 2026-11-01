@@ -3,12 +3,13 @@ services:
     image: ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}:latest
     container_name: avwx
     restart: unless-stopped
+    network_mode: bridge
     ports:
       - "8080:8080"
     env_file:
       - .env
     devices:
-      - "/dev/spidev4.0:/dev/spidev4.0"
+      - "/dev/spidev4.1:/dev/spidev4.1"
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
@@ -16,8 +17,9 @@ services:
     image: containrrr/watchtower
     container_name: watchtower
     restart: unless-stopped
-    environment: 
-      DOCKER_API_VERSION=1.44
+    network_mode: bridge
+    environment:
+      - DOCKER_API_VERSION=1.44
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     # Check for new images every 300 seconds (5 minutes)
