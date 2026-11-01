@@ -11,6 +11,13 @@ function App() {
   const [error, setError] = useState('');
   const [selectedAirport, setSelectedAirport] = useState<WeatherData | null>(null);
 
+  const formatLastUpdate = (iso?: string) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const fetchStatus = async () => {
     try {
       const res = await fetch('/api/status');
@@ -38,11 +45,14 @@ function App() {
 
   const control = async (action: 'start' | 'stop' | 'refresh') => {
     try {
-      await fetch(`/api/control/${action}`, { method: 'POST' });
+      const res = await fetch(`/api/control/${action}`, { method: 'POST' });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      setError('');
       fetchStatus();
       if (action !== 'stop') fetchWeather();
     } catch (e) {
       console.error(e);
+      setError(`Command "${action}" failed. The board may be offline.`);
     }
   };
 
@@ -85,6 +95,9 @@ function App() {
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <span className={`w-2 h-2 rounded-full ${status.active ? 'bg-green-500' : 'bg-red-500'}`}></span>
                 {status.active ? 'System Active' : 'System Stopped'}
+                {status.last_update && formatLastUpdate(status.last_update) && (
+                  <span>&middot; Updated {formatLastUpdate(status.last_update)}</span>
+                )}
               </div>
             </div>
           </div>
@@ -114,6 +127,9 @@ function App() {
               onChange={(e) => updateBrightness(parseInt(e.target.value))}
               className="w-24 accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
             />
+            <span className="text-xs text-slate-300 w-8 text-right" data-testid="brightness-value">
+              {status.brightness}
+            </span>
           </div>
         </div>
       </header>

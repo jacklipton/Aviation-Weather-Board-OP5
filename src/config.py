@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Optional
 
 
-# Load .env from repo root regardless of CWD
+# Load .env from repo root regardless of CWD.
+# override=False so real environment variables (e.g. `ENVIRONMENT=local make run-mock`)
+# take precedence over .env values; .env acts as the defaults file.
 REPO_ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(REPO_ROOT / ".env", override=True)
+load_dotenv(REPO_ROOT / ".env", override=False)
 
 
 def getenv(name: str, default: Optional[str] = None) -> Optional[str]:

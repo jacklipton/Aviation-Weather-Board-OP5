@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import time
 from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -54,6 +56,7 @@ class BackgroundWorker:
         self.service = service
         self.active = True
         self.running = False
+        self.last_update: Optional[str] = None  # ISO timestamp of last successful fetch
         self._task = None
         self._stop_event = asyncio.Event()
         self._trigger_event = asyncio.Event() # For instant refresh
@@ -85,6 +88,7 @@ class BackgroundWorker:
                     logger.info("Fetching weather update...")
                     # Run blocking sync code in thread pool
                     await asyncio.to_thread(self.service.fetch_and_update)
+                    self.last_update = datetime.now(timezone.utc).isoformat()
                     logger.info("Weather update complete.")
                 except Exception as e:
                     logger.error(f"Error in background update: {e}")
@@ -100,6 +104,8 @@ class BackgroundWorker:
                 pass
 
 # --- App Setup ---
+
+STARTED_AT = time.time()
 
 controller = make_controller()
 service = WeatherService(controller)
@@ -140,8 +146,8 @@ app.add_middleware(
 async def get_status():
     return SystemStatus(
         active=worker.active,
-        last_update=None, # Todo: Track timestamp in service
-        uptime_seconds=0.0, # Todo: Track start time
+        last_update=worker.last_update,
+        uptime_seconds=round(time.time() - STARTED_AT, 1),
         brightness=controller.spec.brightness
     )
 
