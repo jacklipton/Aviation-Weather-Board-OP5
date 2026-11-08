@@ -28,6 +28,8 @@ class BaseLightController:
         # (weather repaints) can't interleave writes to the shared SPI device.
         self.enabled = True
         self._lock = threading.Lock()
+        self._watchdog_stop = threading.Event()
+        self._watchdog_thread: threading.Thread | None = None
 
     def setup(self) -> None:
         raise NotImplementedError
@@ -59,6 +61,30 @@ class BaseLightController:
     def set_brightness(self, brightness: int) -> None:
         """Update global brightness (0-255)."""
         self.spec.brightness = max(0, min(255, brightness))
+
+    def start_repaint_watchdog(self, interval_seconds: int) -> None:
+        """Start a daemon thread that re-pushes the current buffer every N seconds.
+
+        WS2812s have no error detection: electrical noise on the data line (e.g.
+        transients from a nearby light switch) can latch wrong colours into the
+        strip, and the corruption would otherwise sit there until the next
+        weather repaint. Since the pixel buffer in memory is always the truth,
+        simply re-sending it overwrites any glitch. show() is a no-op while
+        disabled, so the watchdog never relights the board after stop.
+        """
+        if interval_seconds <= 0 or self._watchdog_thread is not None:
+            return
+        self._watchdog_thread = threading.Thread(
+            target=self._repaint_watchdog_loop,
+            args=(interval_seconds,),
+            name="led-repaint-watchdog",
+            daemon=True,
+        )
+        self._watchdog_thread.start()
+
+    def _repaint_watchdog_loop(self, interval_seconds: int) -> None:
+        while not self._watchdog_stop.wait(interval_seconds):
+            self.show()
 
     def flash(self, color: Color, seconds: float = 0.5, repeats: int = 3) -> None:
         for _ in range(repeats):
@@ -118,6 +144,9 @@ class WS2812SPIController(BaseLightController):
         self.spi.max_speed_hz = self.speed
         self.spi.mode = 0
         print(f"🔧 WS2812 (SPI emu) on /dev/spidev{self.bus}.{self.dev} @{self.speed}Hz: {self.spec}")
+        self.start_repaint_watchdog(config.LED_REPAINT_SECONDS)
+        if self._watchdog_thread is not None:
+            print(f"🔁 LED repaint watchdog active every {config.LED_REPAINT_SECONDS}s")
 
     @staticmethod
     def _encode_byte(b: int) -> List[int]:
