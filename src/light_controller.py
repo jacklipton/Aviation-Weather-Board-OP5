@@ -67,10 +67,10 @@ class BaseLightController:
 
         WS2812s have no error detection: electrical noise on the data line (e.g.
         transients from a nearby light switch) can latch wrong colours into the
-        strip, and the corruption would otherwise sit there until the next
-        weather repaint. Since the pixel buffer in memory is always the truth,
-        simply re-sending it overwrites any glitch. show() is a no-op while
-        disabled, so the watchdog never relights the board after stop.
+        strip — and while the board is off, can light pixels up with nothing
+        ever correcting them until the next repaint. Since the pixel buffer in
+        memory is always the truth, re-sending it overwrites any glitch: when
+        enabled that's the buffer, when disabled an all-black frame.
         """
         if interval_seconds <= 0 or self._watchdog_thread is not None:
             return
@@ -84,7 +84,11 @@ class BaseLightController:
 
     def _repaint_watchdog_loop(self, interval_seconds: int) -> None:
         while not self._watchdog_stop.wait(interval_seconds):
-            self.show()
+            if self.enabled:
+                self.show()
+            else:
+                # Board is off: re-assert black so noise-lit pixels go dark.
+                self.clear()
 
     def flash(self, color: Color, seconds: float = 0.5, repeats: int = 3) -> None:
         for _ in range(repeats):

@@ -55,9 +55,9 @@ WS2812_SPI_BUS = int(getenv("WS2812_SPI_BUS", "0"))
 WS2812_SPI_DEVICE = int(getenv("WS2812_SPI_DEVICE", "0"))
 WS2812_SPI_SPEED_HZ = int(getenv("WS2812_SPI_SPEED_HZ", "3200000"))  # 3.2 MHz
 
-# EMI self-healing: re-push the current buffer every N seconds so a frame
-# corrupted on the data line (e.g. by nearby switch contact arcs) can't linger
-# until the next weather refresh. 0 disables.
+# EMI self-healing: re-push the current buffer every N seconds (all-black when
+# the board is off) so a frame corrupted on the data line (e.g. by nearby
+# switch contact arcs) can't linger until the next weather refresh. 0 disables.
 LED_REPAINT_SECONDS = int(getenv("LED_REPAINT_SECONDS", "10"))
 
 # Basic auth for web UI (optional)
